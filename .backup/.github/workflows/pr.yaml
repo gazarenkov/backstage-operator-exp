@@ -18,6 +18,8 @@ on:
   pull_request:
     branches: 
     - main
+    - rhdh-1.[0-9]+
+    - 1.[0-9]+.x
 
 jobs:
   pr-validate:
