@@ -30,22 +30,22 @@ jobs:
           fetch-depth: 0
 
       # check changes in this commit for regex include and exclude matches; pipe to an env var
-      - name: Check for changes to build
-        run: |
-          # don't fail if nothing returned by grep
-          set +e 
-          CHANGES="$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | \
-            grep -E "workflows/pr.yaml|Makefile|bundle/|config/|go.mod|go.sum|.+\.go" | \
-            grep -v -E "/.rhdh/")";
-          echo "Changed files for this commit:"
-          echo "=============================="
-          echo "$CHANGES"
-          echo "=============================="
-          {
-            echo 'CHANGES<<EOF'
-            echo $CHANGES
-            echo EOF
-          } >> "$GITHUB_ENV"
+#      - name: Check for changes to build
+#        run: |
+#          # don't fail if nothing returned by grep
+#          set +e
+#          CHANGES="$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | \
+#            grep -E "workflows/pr.yaml|Makefile|bundle/|config/|go.mod|go.sum|.+\.go" | \
+#            grep -v -E "/.rhdh/")";
+#          echo "Changed files for this commit:"
+#          echo "=============================="
+#          echo "$CHANGES"
+#          echo "=============================="
+#          {
+#            echo 'CHANGES<<EOF'
+#            echo $CHANGES
+#            echo EOF
+#          } >> "$GITHUB_ENV"
 
       - name: Setup Go
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
@@ -58,7 +58,7 @@ jobs:
 
       - name: test
         # run this stage only if there are changes that match the includes and not the excludes
-        if: ${{ env.CHANGES != '' }}
+#        if: ${{ env.CHANGES != '' }}
         run: make test
 
       - name: Run Gosec Security Scanner
