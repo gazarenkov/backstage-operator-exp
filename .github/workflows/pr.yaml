@@ -66,7 +66,11 @@ jobs:
         run: make install run &
 
       - name: test
-        run: make test USE_EXISTING_CLUSTER=true USE_EXISTING_CONTROLLER=true
+        run: make test
+
+      - name: integration test
+        run: make integration-test USE_EXISTING_CLUSTER=true USE_EXISTING_CONTROLLER=true
+
 
 #      - name: Run Gosec Security Scanner
 #        run: make gosec
