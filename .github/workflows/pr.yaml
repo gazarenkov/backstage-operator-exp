@@ -65,7 +65,7 @@ jobs:
         run: kubectl get pods -A
 
       - name: Run controller
-        run: make install run
+        run: make install run &
 
       - name: test
         run: make test USE_EXISTING_CLUSTER=true USE_EXISTING_CONTROLLER=true
