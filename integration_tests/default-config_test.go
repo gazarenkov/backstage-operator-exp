@@ -19,14 +19,15 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
 	"redhat-developer/red-hat-developer-hub-operator/pkg/utils"
 
 	"redhat-developer/red-hat-developer-hub-operator/pkg/model"
 
-	appsv1 "k8s.io/api/apps/v1"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	bsv1 "redhat-developer/red-hat-developer-hub-operator/api/v1alpha2"
+
+	appsv1 "k8s.io/api/apps/v1"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -176,12 +177,12 @@ var _ = When("create default backstage", func() {
 		}, "")
 
 		Eventually(func(g Gomega) {
-			By("creating Deployment")
+			By("getting Deployment")
 			deploy := &appsv1.Deployment{}
 			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: model.DeploymentName(backstageName)}, deploy)
 			g.Expect(err).ShouldNot(HaveOccurred())
 
-			By("creating StatefulSet")
+			By("getting StatefulSet")
 			dbStatefulSet := &appsv1.StatefulSet{}
 			name := fmt.Sprintf("backstage-psql-%s", backstageName)
 			err = k8sClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: name}, dbStatefulSet)
@@ -199,20 +200,39 @@ var _ = When("create default backstage", func() {
 		err = k8sClient.Update(ctx, update)
 		Expect(err).To(Not(HaveOccurred()))
 
-		// Patching StatefulSets is done by the reconciler in two passes: first deleting the StatefulSet first, then recreating it in the next reconcilation.
-		for i := 0; i < 2; i++ {
-			_, err = NewTestBackstageReconciler(ns).ReconcileAny(ctx, reconcile.Request{
-				NamespacedName: types.NamespacedName{Name: backstageName, Namespace: ns},
-			})
-			Expect(err).To(Not(HaveOccurred()))
-		}
+		_, err = NewTestBackstageReconciler(ns).ReconcileAny(ctx, reconcile.Request{
+			NamespacedName: types.NamespacedName{Name: backstageName, Namespace: ns},
+		})
+		Expect(err).To(Not(HaveOccurred()))
+
+		// Patching StatefulSets is done by the reconciler in two passes: first deleting the StatefulSet, then recreating it in the next reconcilation.
+		// to make next reconciliation happen (forcing ReconcileAny is not working on a real cluster)
+		update.SetAnnotations(map[string]string{"name": "value"})
+		err = k8sClient.Update(ctx, update)
+		Expect(err).To(Not(HaveOccurred()))
+
+		_, err = NewTestBackstageReconciler(ns).ReconcileAny(ctx, reconcile.Request{
+			NamespacedName: types.NamespacedName{Name: backstageName, Namespace: ns},
+		})
+		Expect(err).To(Not(HaveOccurred()))
+
+		//// Patching StatefulSets is done by the reconciler in two passes: first deleting the StatefulSet first, then recreating it in the next reconcilation.
+		//for i := 0; i < 2; i++ {
+		//
+		//	_, err = NewTestBackstageReconciler(ns).ReconcileAny(ctx, reconcile.Request{
+		//		NamespacedName: types.NamespacedName{Name: backstageName, Namespace: ns},
+		//	})
+		//	Expect(err).To(Not(HaveOccurred()))
+		//}
 
 		Eventually(func(g Gomega) {
+
 			By("replacing StatefulSet")
 			dbStatefulSet := &appsv1.StatefulSet{}
 			err = k8sClient.Get(ctx, types.NamespacedName{Namespace: ns, Name: fmt.Sprintf("backstage-psql-%s", backstageName)}, dbStatefulSet)
 			g.Expect(err).ShouldNot(HaveOccurred())
 			g.Expect(dbStatefulSet.Spec.PodManagementPolicy).To(Equal(appsv1.OrderedReadyPodManagement))
+
 		}, time.Minute, time.Second).Should(Succeed())
 	})
 
