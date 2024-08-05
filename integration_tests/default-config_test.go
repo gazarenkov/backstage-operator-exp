@@ -205,8 +205,8 @@ var _ = When("create default backstage", func() {
 		})
 		Expect(err).To(Not(HaveOccurred()))
 
-		// Patching StatefulSets is done by the reconciler in two passes: first deleting the StatefulSet first, then recreating it in the next reconcilation.
-		// to make next reconciliation happen (forcing ReconcileAny will not work on a real cluster)
+		// Patching StatefulSets is done by the reconciler in two passes: first deleting the StatefulSet, then recreating it in the next reconcilation.
+		// to make next reconciliation happen (forcing ReconcileAny is not working on a real cluster)
 		update.SetAnnotations(map[string]string{"name": "value"})
 		err = k8sClient.Update(ctx, update)
 		Expect(err).To(Not(HaveOccurred()))
